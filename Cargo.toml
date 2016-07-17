@@ -6,3 +6,4 @@ authors = ["Chris Wilhelm <chris.wilhelm@gmail.com>"]
 [dependencies]
 num-complex = "*"
 image = "*"
+rand = "*"

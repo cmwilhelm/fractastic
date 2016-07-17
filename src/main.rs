@@ -1,5 +1,6 @@
 extern crate image;
 extern crate num_complex;
+extern crate rand;
 
 use std::fs::File;
 use std::path::Path;
@@ -15,6 +16,28 @@ struct Color {
 impl Color {
     pub fn to_pixel(&self) -> image::Rgba<u8> {
         image::Rgba([self.r as u8, self.g as u8, self.b as u8, 255])
+    }
+}
+
+struct Palette {
+    options:  Vec<Color>,
+    backdrop: Color
+}
+
+impl Palette {
+    fn new(size: usize) -> Self {
+        let options = (0..size).into_iter().map(|i| {
+            Color {
+                r: rand::random::<u8>(),
+                g: rand::random::<u8>(),
+                b: rand::random::<u8>()
+            }
+        }).collect::<Vec<Color>>();
+
+        Palette {
+            options:  options,
+            backdrop: Color { r: 0, g: 0, b: 0 }
+        }
     }
 }
 
@@ -38,21 +61,23 @@ fn mandelbrot_escape_number(complex_point: Complex<f32>) -> Option<usize> {
     None
 }
 
-fn choose_color(escape_number: Option<usize>) -> Color {
+fn choose_color<'a>(escape_number: Option<usize>, palette: &'a Palette) -> &'a Color {
     match escape_number {
-        Some(_) => Color { r: 255, g: 255, b: 255 },
-        None    => Color { r: 0, g: 0, b: 0 }
+        Some(i) => &palette.options[i as usize % palette.options.len()],
+        None    => &palette.backdrop
     }
 }
 
 fn main () {
-    let xdim: u32   = 1400;
-    let ydim: u32   = 800;
+    let xdim: u32 = 5600;
+    let ydim: u32 = 3200;
+
+    let palette = Palette::new(15);
 
     let imgbuf = image::ImageBuffer::from_fn(xdim, ydim, |x, y| {
         let complex       = complex_from_point(x, y, xdim, ydim);
         let escape_number = mandelbrot_escape_number(complex);
-        let color         = choose_color(escape_number);
+        let color         = choose_color(escape_number, &palette);
 
         color.to_pixel()
     });
