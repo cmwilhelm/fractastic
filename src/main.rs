@@ -21,8 +21,8 @@ impl Color {
 
 fn complex_from_point(x: u32, y: u32, xmax: u32, ymax: u32) -> Complex<f32> {
     Complex {
-        re: (x as f32 / xmax as f32) * 3.0 - 2.5,
-        im: (y as f32 / ymax as f32) * 2.0 - 1.0
+        re: (x as f32 / xmax as f32) * 3.0 - 2.25,
+        im: (y as f32 / ymax as f32) * 3.0 - 1.5
     }
 }
 
@@ -67,11 +67,11 @@ fn choose_color<'a>(escape_number: Option<usize>) -> Color {
 
 fn main () {
     let xdim: u32 = 1400;
-    let ydim: u32 = 800;
+    let ydim: u32 = 1200;
 
     let imgbuf = image::ImageBuffer::from_fn(xdim, ydim, |x, y| {
         let complex       = complex_from_point(x, y, xdim, ydim);
-        let escape_number = mandelbrot_escape_number(complex, None);
+        let escape_number = mandelbrot_escape_number(complex, Some(8));
         let color         = choose_color(escape_number);
 
         color.to_pixel()
