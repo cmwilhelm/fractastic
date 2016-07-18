@@ -7,6 +7,51 @@ use std::path::Path;
 
 use num_complex::Complex;
 
+struct Window {
+    origin:   Complex<f32>,
+    p_width:  u32,
+    p_height: u32,
+    zoom:     f32
+}
+
+impl Default for Window {
+    fn default() -> Self {
+        Window {
+            origin:   Complex { re: -0.75f32, im: 0f32 },
+            p_width:  2800,
+            p_height: 2400,
+            zoom:     1.0
+        }
+    }
+}
+
+impl Window {
+    pub fn complex_from_point(&self, x: u32, y: u32) -> Complex<f32> {
+        let re_proportion = x as f32 / self.p_width as f32;
+        let im_proportion = y as f32 / self.p_height as f32;
+
+        let real_size      = self.real_size();
+        let imaginary_size = self.imaginary_size();
+
+        Complex {
+            re: re_proportion * real_size + (self.origin.re - (real_size / 2.0)),
+            im: im_proportion * imaginary_size + (self.origin.im - (imaginary_size / 2.0))
+        }
+    }
+
+    fn cartesian_to_pixel(&self) -> f32 {
+        0.001275 / self.zoom
+    }
+
+    fn real_size(&self) -> f32 {
+        self.p_width as f32 * self.cartesian_to_pixel()
+    }
+
+    fn imaginary_size(&self) -> f32 {
+        self.p_height as f32 * self.cartesian_to_pixel()
+    }
+}
+
 struct Color {
     r: u8,
     g: u8,
@@ -19,13 +64,6 @@ impl Color {
     }
 }
 
-fn complex_from_point(x: u32, y: u32, xmax: u32, ymax: u32) -> Complex<f32> {
-    Complex {
-        re: (x as f32 / xmax as f32) * 3.0 - 2.25,
-        im: (y as f32 / ymax as f32) * 3.0 - 1.5
-    }
-}
-
 fn mandelbrot_escape_number(complex_point: Complex<f32>, escape_point: Option<u32>) -> Option<f32> {
     let mut z: Complex<f32> = Complex { re: 0.0, im: 0.0 };
 
@@ -34,7 +72,7 @@ fn mandelbrot_escape_number(complex_point: Complex<f32>, escape_point: Option<u3
         None        => 2.0
     };
 
-    for i in 0..500 {
+    for i in 0..250 {
         z = z.powf(2.0) + complex_point;
         if z.norm() >= epoint {
             let log_zn = (z.im * z.im + z.re * z.re).log(10.0) / 2.0;
@@ -68,11 +106,10 @@ fn choose_color<'a>(escape_number: Option<f32>) -> Color {
 }
 
 fn main () {
-    let xdim: u32 = 2800;
-    let ydim: u32 = 2400;
+    let window = Window::default();
 
-    let imgbuf = image::ImageBuffer::from_fn(xdim, ydim, |x, y| {
-        let complex       = complex_from_point(x, y, xdim, ydim);
+    let imgbuf = image::ImageBuffer::from_fn(window.p_width, window.p_height, |x, y| {
+        let complex       = window.complex_from_point(x, y);
         let escape_number = mandelbrot_escape_number(complex, Some(8));
         let color         = choose_color(escape_number);
 
