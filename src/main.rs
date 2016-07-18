@@ -26,7 +26,7 @@ fn complex_from_point(x: u32, y: u32, xmax: u32, ymax: u32) -> Complex<f32> {
     }
 }
 
-fn mandelbrot_escape_number(complex_point: Complex<f32>, escape_point: Option<u32>) -> Option<usize> {
+fn mandelbrot_escape_number(complex_point: Complex<f32>, escape_point: Option<u32>) -> Option<f32> {
     let mut z: Complex<f32> = Complex { re: 0.0, im: 0.0 };
 
     let epoint = match escape_point {
@@ -34,17 +34,19 @@ fn mandelbrot_escape_number(complex_point: Complex<f32>, escape_point: Option<u3
         None        => 2.0
     };
 
-    for i in 0..250 {
+    for i in 0..500 {
         z = z.powf(2.0) + complex_point;
         if z.norm() >= epoint {
-            return Some(i)
+            let log_zn = (z.im * z.im + z.re * z.re).log(10.0) / 2.0;
+            let nu     = (log_zn / (2.0 as f32).log(10.0)).log(10.0) / (2.0 as f32).log(10.0);
+            return Some(i as f32 + 1.0 - nu)
         }
     }
 
     None
 }
 
-fn choose_color<'a>(escape_number: Option<usize>) -> Color {
+fn choose_color<'a>(escape_number: Option<f32>) -> Color {
     match escape_number {
         Some(i) => {
             let frequency = 0.3;
@@ -55,9 +57,9 @@ fn choose_color<'a>(escape_number: Option<usize>) -> Color {
             let center    = 128.0;
 
             Color {
-                r: ((frequency * i as f32 + phase_r).sin() * width + center) as u8,
-                g: ((frequency * i as f32 + phase_g).sin() * width + center) as u8,
-                b: ((frequency * i as f32 + phase_b).sin() * width + center) as u8
+                r: ((frequency * i + phase_r).sin() * width + center) as u8,
+                g: ((frequency * i + phase_g).sin() * width + center) as u8,
+                b: ((frequency * i + phase_b).sin() * width + center) as u8
             }
         },
 
@@ -66,8 +68,8 @@ fn choose_color<'a>(escape_number: Option<usize>) -> Color {
 }
 
 fn main () {
-    let xdim: u32 = 1400;
-    let ydim: u32 = 1200;
+    let xdim: u32 = 2800;
+    let ydim: u32 = 2400;
 
     let imgbuf = image::ImageBuffer::from_fn(xdim, ydim, |x, y| {
         let complex       = complex_from_point(x, y, xdim, ydim);
