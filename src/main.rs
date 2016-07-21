@@ -16,35 +16,55 @@ Usage:
   fractastic [options]
 
 Options:
-  -h --help                Show this screen.
-  --re=<re>                Origin, real axis
-  --im=<im>                Origin, imaginary axis
-  --zoom=<zoom>            Zoom factor
+  -h --help                   Show this screen.
+  --re=<re>                   Origin, real axis
+  --im=<im>                   Origin, imaginary axis
+  --zoom=<zoom>               Zoom factor
+  --iterations=<iterations>   Number of iterations
 ";
 
 #[derive(Debug, RustcDecodable)]
 struct Args {
-    flag_re:   Option<f32>,
-    flag_im:   Option<f32>,
-    flag_zoom: Option<f32>
+    flag_re:         Option<f32>,
+    flag_im:         Option<f32>,
+    flag_zoom:       Option<f32>,
+    flag_iterations: Option<usize>
 }
 
-fn make_window_from_args(args: &Args) -> Window {
-    let mut window = Window::default();
+fn make_options_from_args(args: &Args) -> Options {
+    let mut options = Options::default();
 
     if let Some(re) = args.flag_re {
-        window.origin.re = re;
+        options.window.origin.re = re;
     }
 
     if let Some(im) = args.flag_im {
-        window.origin.im = im;
+        options.window.origin.im = im;
     }
 
     if let Some(zoom) = args.flag_zoom {
-        window.zoom = zoom;
+        options.window.zoom = zoom;
     }
 
-    window
+    if let Some(iterations) = args.flag_iterations {
+        options.iterations = iterations;
+    }
+
+    options
+}
+
+struct Options {
+    iterations: usize,
+    window:     Window
+}
+
+impl Default for Options {
+    fn default() -> Self {
+        Options {
+            iterations: 250,
+            window:     Window::default()
+        }
+    }
 }
 
 struct Window {
@@ -104,7 +124,11 @@ impl Color {
     }
 }
 
-fn mandelbrot_escape_number(complex_point: Complex<f32>, escape_point: Option<u32>) -> Option<f32> {
+fn mandelbrot_escape_number(
+    complex_point: Complex<f32>,
+    escape_point:  Option<u32>,
+    iterations:    usize
+) -> Option<f32> {
     let mut z: Complex<f32> = Complex { re: 0.0, im: 0.0 };
 
     let epoint = match escape_point {
@@ -112,7 +136,7 @@ fn mandelbrot_escape_number(complex_point: Complex<f32>, escape_point: Option<u3
         None        => 2.0
     };
 
-    for i in 0..750 {
+    for i in 0..iterations {
         z = z.powf(2.0) + complex_point;
         if z.norm() >= epoint {
             let log_zn = (z.im * z.im + z.re * z.re).log(10.0) / 2.0;
@@ -150,7 +174,8 @@ fn main () {
         .and_then(|d| d.decode())
         .unwrap_or_else(|e| e.exit());
 
-    let window = make_window_from_args(&args);
+    let options = make_options_from_args(&args);
+    let ref window = options.window;
 
     /*let window = Window {
         zoom: 30.0,
@@ -160,7 +185,7 @@ fn main () {
 
     let imgbuf = image::ImageBuffer::from_fn(window.p_width, window.p_height, |x, y| {
         let complex       = window.complex_from_point(x, y);
-        let escape_number = mandelbrot_escape_number(complex, Some(8));
+        let escape_number = mandelbrot_escape_number(complex, Some(8), options.iterations);
         let color         = choose_color(escape_number);
 
         color.to_pixel()
