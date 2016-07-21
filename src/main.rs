@@ -1,3 +1,5 @@
+extern crate docopt;
+extern crate rustc_serialize;
 extern crate image;
 extern crate num_complex;
 extern crate rand;
@@ -6,6 +8,44 @@ use std::fs::File;
 use std::path::Path;
 
 use num_complex::Complex;
+
+const USAGE: &'static str = "
+Fractastic! A CLI for generating fractal images
+
+Usage:
+  fractastic [options]
+
+Options:
+  -h --help                Show this screen.
+  --re=<re>                Origin, real axis
+  --im=<im>                Origin, imaginary axis
+  --zoom=<zoom>            Zoom factor
+";
+
+#[derive(Debug, RustcDecodable)]
+struct Args {
+    flag_re:   Option<f32>,
+    flag_im:   Option<f32>,
+    flag_zoom: Option<f32>
+}
+
+fn make_window_from_args(args: &Args) -> Window {
+    let mut window = Window::default();
+
+    if let Some(re) = args.flag_re {
+        window.origin.re = re;
+    }
+
+    if let Some(im) = args.flag_im {
+        window.origin.im = im;
+    }
+
+    if let Some(zoom) = args.flag_zoom {
+        window.zoom = zoom;
+    }
+
+    window
+}
 
 struct Window {
     origin:   Complex<f32>,
@@ -72,7 +112,7 @@ fn mandelbrot_escape_number(complex_point: Complex<f32>, escape_point: Option<u3
         None        => 2.0
     };
 
-    for i in 0..250 {
+    for i in 0..750 {
         z = z.powf(2.0) + complex_point;
         if z.norm() >= epoint {
             let log_zn = (z.im * z.im + z.re * z.re).log(10.0) / 2.0;
@@ -106,7 +146,17 @@ fn choose_color<'a>(escape_number: Option<f32>) -> Color {
 }
 
 fn main () {
-    let window = Window::default();
+    let args: Args = docopt::Docopt::new(USAGE)
+        .and_then(|d| d.decode())
+        .unwrap_or_else(|e| e.exit());
+
+    let window = make_window_from_args(&args);
+
+    /*let window = Window {
+        zoom: 30.0,
+        origin: Complex { re: -0.75f32, im: -0.2f32 },
+        ..Window::default()
+    };*/
 
     let imgbuf = image::ImageBuffer::from_fn(window.p_width, window.p_height, |x, y| {
         let complex       = window.complex_from_point(x, y);

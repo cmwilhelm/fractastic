@@ -7,3 +7,5 @@ authors = ["Chris Wilhelm <chris.wilhelm@gmail.com>"]
 num-complex = "*"
 image = "*"
 rand = "*"
+docopt = "*"
+rustc-serialize = "0.3"
