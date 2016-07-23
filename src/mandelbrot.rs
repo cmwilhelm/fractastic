@@ -4,7 +4,23 @@ use num_complex::Complex;
 use color::Color;
 use options::Options;
 
-pub fn escape_number(
+pub fn generate_image(options: &Options) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
+    let ref window = options.window;
+
+    ImageBuffer::from_fn(window.p_width, window.p_height, |x, y| {
+        let complex = window.complex_from_point(x, y);
+        let escape_number = escape_number(
+            complex,
+            Some(8),
+            options.iterations
+        );
+        let color = choose_color(escape_number);
+
+        color.to_pixel()
+    })
+}
+
+fn escape_number(
     complex_point: Complex<f32>,
     escape_point:  Option<u32>,
     iterations:    usize
@@ -28,7 +44,7 @@ pub fn escape_number(
     None
 }
 
-pub fn choose_color<'a>(escape_number: Option<f32>) -> Color {
+fn choose_color<'a>(escape_number: Option<f32>) -> Color {
     match escape_number {
         Some(i) => {
             let frequency = 0.3;
@@ -47,20 +63,4 @@ pub fn choose_color<'a>(escape_number: Option<f32>) -> Color {
 
         None => Color { r: 0, g: 0, b: 0 }
     }
-}
-
-pub fn generate_image(options: &Options) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
-    let ref window = options.window;
-
-    ImageBuffer::from_fn(window.p_width, window.p_height, |x, y| {
-        let complex = window.complex_from_point(x, y);
-        let escape_number = escape_number(
-            complex,
-            Some(8),
-            options.iterations
-        );
-        let color = choose_color(escape_number);
-
-        color.to_pixel()
-    })
 }
