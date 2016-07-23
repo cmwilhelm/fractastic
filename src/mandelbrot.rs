@@ -20,12 +20,31 @@ pub fn generate_image(options: &Options) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
     })
 }
 
+fn is_cardioid_member(point: &Complex<f32>) -> bool {
+    let q     = (point.re - 0.25).powf(2.0) + point.im.powf(2.0);
+    let left  = q * (q + point.re - 0.25);
+    let right = 0.25 * point.im.powf(2.0);
+
+    left < right
+}
+
+fn is_bulb_member(point: &Complex<f32>) -> bool {
+    let term1 = (point.re + 1.0).powf(2.0);
+    let term2 = point.im.powf(2.0);
+
+    term1 + term2 < 0.0625
+}
+
 fn escape_number(
     complex_point: Complex<f32>,
     escape_point:  Option<u32>,
     iterations:    usize
 ) -> Option<f32> {
     let mut z: Complex<f32> = Complex { re: 0.0, im: 0.0 };
+
+    if is_cardioid_member(&complex_point) || is_bulb_member(&complex_point) {
+        return None;
+    }
 
     let epoint = match escape_point {
         Some(value) => value as f32,
